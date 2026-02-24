@@ -70,7 +70,7 @@ http://localhost:8080/media/player.html
 ```
 *(A basic HLS.js player page is included.)*
 
-### cURL Verification
+### CURL Verification
 ```bash
 # Check master playlist
 curl -I http://localhost:8080/media/output/master.m3u8
