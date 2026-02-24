@@ -29,3 +29,5 @@ desktop.ini
 
 # Logs
 *.log
+
+!media/player.html

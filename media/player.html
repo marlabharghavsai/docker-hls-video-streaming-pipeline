@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HLS Stream Player</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0f0f13;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 0.4rem;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+
+    .player-wrapper {
+      background: #1a1a24;
+      border: 1px solid #2a2a3a;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      width: 100%;
+      max-width: 900px;
+    }
+
+    video {
+      width: 100%;
+      display: block;
+      background: #000;
+      aspect-ratio: 16/9;
+    }
+
+    .info-bar {
+      padding: 1rem 1.4rem;
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      border-top: 1px solid #2a2a3a;
+    }
+
+    .badge {
+      background: #252535;
+      border: 1px solid #3a3a55;
+      border-radius: 6px;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #4caf50;
+      animation: pulse 1.5s infinite;
+    }
+
+    .badge .dot.red { background: #f44336; animation: none; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    #quality-label { color: #a0aec0; }
+    #quality-label span { color: #7c6cff; font-weight: 600; }
+
+    .url-row {
+      padding: 0.8rem 1.4rem;
+      background: #13131c;
+      border-top: 1px solid #1e1e2e;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.82rem;
+    }
+
+    .url-row label { color: #666; white-space: nowrap; }
+    .url-row input {
+      flex: 1;
+      background: #1c1c28;
+      border: 1px solid #2e2e42;
+      border-radius: 6px;
+      padding: 0.4rem 0.7rem;
+      color: #ccc;
+      font-size: 0.82rem;
+      outline: none;
+    }
+    .url-row button {
+      background: #7c6cff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.4rem 0.9rem;
+      cursor: pointer;
+      font-size: 0.82rem;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    .url-row button:hover { background: #6a5aef; }
+
+    .log {
+      margin-top: 1.6rem;
+      width: 100%;
+      max-width: 900px;
+      background: #13131c;
+      border: 1px solid #2a2a3a;
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      font-size: 0.78rem;
+      font-family: 'Courier New', monospace;
+      color: #6a8;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .log .err { color: #f66; }
+    .log .info { color: #7af; }
+  </style>
+</head>
+<body>
+
+  <h1>🎬 HLS Adaptive Bitrate Player</h1>
+  <p class="subtitle">Powered by HLS.js — Adaptive Bitrate Streaming Demo</p>
+
+  <div class="player-wrapper">
+    <video id="hls-video" controls autoplay muted></video>
+
+    <div class="info-bar">
+      <div class="badge">
+        <div class="dot" id="status-dot"></div>
+        <span id="status-text">Connecting…</span>
+      </div>
+      <div id="quality-label">Quality: <span id="quality-display">Auto</span></div>
+    </div>
+
+    <div class="url-row">
+      <label>Stream URL:</label>
+      <input type="text" id="stream-url" value="/media/output/master.m3u8" />
+      <button onclick="loadStream()">Load</button>
+    </div>
+  </div>
+
+  <div class="log" id="log-panel">
+    <div class="info">[player] Initializing HLS.js stream player…</div>
+  </div>
+
+  <!-- HLS.js from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js"></script>
+  <script>
+    const video = document.getElementById('hls-video');
+    const statusDot = document.getElementById('status-dot');
+    const statusText = document.getElementById('status-text');
+    const qualityDisplay = document.getElementById('quality-display');
+    const logPanel = document.getElementById('log-panel');
+
+    let hls;
+
+    function log(msg, type = '') {
+      const div = document.createElement('div');
+      div.className = type;
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logPanel.appendChild(div);
+      logPanel.scrollTop = logPanel.scrollHeight;
+    }
+
+    function setStatus(text, healthy = true) {
+      statusText.textContent = text;
+      statusDot.className = 'dot' + (healthy ? '' : ' red');
+    }
+
+    function loadStream() {
+      const url = document.getElementById('stream-url').value.trim();
+      if (!url) return;
+
+      if (hls) { hls.destroy(); }
+
+      if (Hls.isSupported()) {
+        hls = new Hls({
+          debug: false,
+          enableWorker: true,
+          lowLatencyMode: false,
+        });
+
+        hls.loadSource(url);
+        hls.attachMedia(video);
+
+        hls.on(Hls.Events.MANIFEST_PARSED, (e, data) => {
+          log(`Manifest parsed — ${data.levels.length} quality levels available`, 'info');
+          setStatus('Manifest loaded ✓');
+          data.levels.forEach((l, i) => {
+            log(`  Level ${i}: ${l.width}×${l.height} @ ${Math.round(l.bitrate/1000)}kbps`);
+          });
+          video.play().catch(() => {});
+        });
+
+        hls.on(Hls.Events.LEVEL_SWITCHED, (e, data) => {
+          const lvl = hls.levels[data.level];
+          const label = lvl ? `${lvl.height}p (${Math.round(lvl.bitrate/1000)}kbps)` : 'Auto';
+          qualityDisplay.textContent = label;
+          log(`Quality switched → ${label}`);
+        });
+
+        hls.on(Hls.Events.FRAG_LOADED, (e, data) => {
+          setStatus('Streaming ▶', true);
+        });
+
+        hls.on(Hls.Events.ERROR, (e, data) => {
+          log(`Error [${data.type}] ${data.details}: ${data.reason || ''}`, 'err');
+          if (data.fatal) {
+            setStatus('Fatal error', false);
+            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) hls.startLoad();
+            else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) hls.recoverMediaError();
+            else hls.destroy();
+          }
+        });
+
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari native HLS support
+        video.src = url;
+        video.addEventListener('loadedmetadata', () => {
+          setStatus('Native HLS ✓');
+          log('Using native Safari HLS support', 'info');
+          video.play().catch(() => {});
+        });
+      } else {
+        setStatus('HLS not supported', false);
+        log('HLS is not supported in this browser', 'err');
+      }
+    }
+
+    // Auto-load on page open
+    loadStream();
+  </script>
+</body>
+</html>
