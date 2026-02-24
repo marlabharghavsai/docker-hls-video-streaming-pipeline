@@ -1,0 +1,48 @@
+# =============================================================================
+# Docker Compose - HLS Adaptive Bitrate Streaming Pipeline
+#
+# Services:
+#   processor  - Transcodes source.mp4 into HLS segments (runs once and exits)
+#   web_server - Nginx serves the HLS files via HTTP on port 8080
+# =============================================================================
+
+version: '3.8'
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Processor Service
+  # Uses the official FFmpeg Docker image to run process.sh
+  # Mounts source video and output media directory as volumes
+  # ---------------------------------------------------------------------------
+  processor:
+    image: jrottenberg/ffmpeg:4.4-alpine
+    entrypoint: /bin/sh
+    command: /app/process.sh
+    volumes:
+      - ./process.sh:/app/process.sh:ro # Processing script (read-only)
+      - ./video:/app/video:ro # Source video directory (read-only)
+      - ./media:/app/media # Output media directory (read-write)
+    restart: "no" # Run once and exit
+
+  # ---------------------------------------------------------------------------
+  # Web Server Service
+  # Nginx serves the generated HLS files with CORS headers and correct MIME types
+  # ---------------------------------------------------------------------------
+  web_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./media:/usr/share/nginx/html/media # Mount generated HLS content
+    depends_on:
+      - processor
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost/media/output/master.m3u8" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped

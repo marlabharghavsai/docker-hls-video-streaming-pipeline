@@ -1,0 +1,31 @@
+# =============================================================================
+# .gitignore - HLS Streaming Pipeline
+# =============================================================================
+
+# Generated media output (large binary files - not for version control)
+media/
+
+# Source video file (too large for Git - download separately)
+video/source.mp4
+video/*.mp4
+video/*.mkv
+video/*.avi
+video/*.mov
+
+# Environment variables (may contain secrets)
+.env
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
