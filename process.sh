@@ -63,7 +63,7 @@ ffmpeg -y \
      [v2]scale=w=1280:h=720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2[vout720]; \
      [v3]scale=w=854:h=480:force_original_aspect_ratio=decrease,pad=854:480:(ow-iw)/2:(oh-ih)/2[vout480]" \
     \
-    -map "[vout1080]" -map 0:a \
+    -map "[vout1080]" -map 0:a? \
     -c:v:0 libx264 -preset fast -crf 22 \
     -b:v:0 5000k -maxrate:v:0 5350k -bufsize:v:0 7500k \
     -c:a:0 aac -b:a:0 192k -ar 48000 \
@@ -73,7 +73,7 @@ ffmpeg -y \
     -hls_segment_filename "${OUTPUT}/1080/seg%03d.ts" \
     "${OUTPUT}/1080/stream.m3u8" \
     \
-    -map "[vout720]" -map 0:a \
+    -map "[vout720]" -map 0:a? \
     -c:v:1 libx264 -preset fast -crf 23 \
     -b:v:1 2500k -maxrate:v:1 2675k -bufsize:v:1 3750k \
     -c:a:1 aac -b:a:1 128k -ar 48000 \
@@ -83,7 +83,7 @@ ffmpeg -y \
     -hls_segment_filename "${OUTPUT}/720/seg%03d.ts" \
     "${OUTPUT}/720/stream.m3u8" \
     \
-    -map "[vout480]" -map 0:a \
+    -map "[vout480]" -map 0:a? \
     -c:v:2 libx264 -preset fast -crf 24 \
     -b:v:2 800k  -maxrate:v:2 856k  -bufsize:v:2 1200k \
     -c:a:2 aac -b:a:2 128k -ar 48000 \
