@@ -2,7 +2,7 @@
 
 A fully containerized video processing pipeline that converts a source MP4 into an **HLS (HTTP Live Streaming)** adaptive bitrate stream. Built with **FFmpeg**, **Nginx**, and **Docker Compose**.
 
-## 🎬 What It Does
+## What It Does
 
 1. **Processor** container transcodes `video/source.mp4` into 3 HLS quality renditions using FFmpeg
 2. **Web Server** container (Nginx) serves the HLS files with proper CORS headers and MIME types
@@ -18,14 +18,14 @@ A fully containerized video processing pipeline that converts a source MP4 into 
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) (includes Docker Compose)
 - A source video file (`source.mp4`) — see step below
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Step 1: Get Source Video
 
@@ -35,7 +35,7 @@ Download the [Big Buck Bunny](https://download.blender.org/demo/movies/BBB/bbb_s
 video/source.mp4
 ```
 
-> ⚠️ The `video/source.mp4` file is excluded from Git (see `.gitignore`). You must download/copy it manually.
+> The `video/source.mp4` file is excluded from Git (see `.gitignore`). You must download/copy it manually.
 
 ### Step 2: Build and Run
 
@@ -56,7 +56,7 @@ The processor will transcode the video (takes several minutes depending on sourc
 
 ---
 
-## 🧪 Testing the Stream
+## Testing the Stream
 
 ### VLC Player
 1. Open VLC → **Media** → **Open Network Stream**
@@ -87,7 +87,7 @@ curl -I http://localhost:8080/media/output/480/seg000.ts
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 task-13/
@@ -120,7 +120,7 @@ task-13/
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 Copy `.env.example` to `.env` and adjust values:
 
@@ -138,7 +138,7 @@ cp .env.example .env
 
 ---
 
-## 🔄 Re-processing
+## Re-processing
 
 The processing script is **idempotent** — it skips transcoding if `media/output/master.m3u8` already exists.
 
@@ -153,7 +153,7 @@ docker-compose run processor
 
 ---
 
-## 🛑 Stopping
+## Stopping
 
 ```bash
 docker-compose down
@@ -161,7 +161,7 @@ docker-compose down
 
 ---
 
-## 🔍 How It Works
+## How It Works
 
 ### Adaptive Bitrate Streaming (HLS)
 1. FFmpeg reads `source.mp4` and produces **three parallel output streams** in a single pass
@@ -180,7 +180,7 @@ Nginx is configured to:
 
 ---
 
-## 📦 Technologies
+## Technologies
 
 | Technology | Role |
 |-----------|------|
@@ -192,7 +192,7 @@ Nginx is configured to:
 
 ---
 
-## 🌐 Master Playlist URL
+## Master Playlist URL
 
 ```
 http://localhost:8080/media/output/master.m3u8
