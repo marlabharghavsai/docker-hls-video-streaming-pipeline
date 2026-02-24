@@ -31,3 +31,6 @@ desktop.ini
 *.log
 
 !media/player.html
+
+docker_check.txt
+generate_doc.py
